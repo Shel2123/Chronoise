@@ -11,10 +11,10 @@ from .config import GeneratorConfig
 @dataclass
 class LevelTrace:
     L: np.ndarray            # (T,) float64
-    breakpoints: np.ndarray  # (M+1,) int64 — tau_0=1, tau_1, ..., tau_M (>= T+1)
-    levels: np.ndarray       # (M+1,) float64 — c_0, c_1, ..., c_M
-    signs: np.ndarray        # (M,) int8 — s_k for k = 0..M-1
-    deltas: np.ndarray       # (M,) float64 — Delta_k
+    breakpoints: np.ndarray  # (M+1,) int64 - tau_0=1, tau_1, ..., tau_M (>= T+1)
+    levels: np.ndarray       # (M+1,) float64 - c_0, c_1, ..., c_M
+    signs: np.ndarray        # (M,) int8 - s_k for k = 0..M-1
+    deltas: np.ndarray       # (M,) float64 - Delta_k
 
 
 def _sigmoid(x: float) -> float:
