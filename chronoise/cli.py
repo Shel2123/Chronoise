@@ -5,7 +5,6 @@ import argparse
 from pathlib import Path
 
 from .config import GeneratorConfig
-from .dataset import NoiseSeriesDataset
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,6 +21,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Also store the level (L) and noise (N) components",
     )
     args = p.parse_args(argv)
+
+    from .dataset import NoiseSeriesDataset
 
     cfg = GeneratorConfig(T=args.T, n_seeds=args.n_seeds, seed_base=args.seed_base)
     ds = NoiseSeriesDataset(cfg=cfg, keep_components=args.keep_components)

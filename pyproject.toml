@@ -6,18 +6,47 @@ build-backend = "setuptools.build_meta"
 name = "chronoise"
 version = "0.1.0"
 description = "Synthetic noise-driven time series with controllable structure for ML benchmarks."
+readme = "README.md"
+license = {file = "LICENSE"}
 authors = [
     {name = "Sosedov A.T.", email = "ac.official.it@gmail.com"},
 ]
 requires-python = ">=3.10"
+keywords = ["time-series", "synthetic-data", "benchmark", "noise", "pytorch", "1/f-noise"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 dependencies = [
     "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.0"]
+dev = [
+    "pytest>=8",
+    "build",
+    "twine",
     "torch>=2.0",
 ]
-readme = "README.md"
 
 [project.scripts]
 chronoise-build = "chronoise.cli:main"
+
+[project.urls]
+Homepage   = "https://github.com/Shel2123/Chronoise"
+Repository = "https://github.com/Shel2123/Chronoise"
+Issues     = "https://github.com/Shel2123/Chronoise/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

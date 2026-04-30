@@ -25,7 +25,6 @@ Quick usage::
     ds2 = NoiseSeriesDataset.load("dataset.npz")
 """
 from .config import GeneratorConfig, NoiseKind, NoiseSpec, default_noise_specs
-from .dataset import NoiseSeriesDataset, SampleSpec, default_specs
 from .level import LevelTrace, generate_level, labels_from_level
 from .noise import colored_noise, el_nino_noise
 from .series import SeriesResult, generate_series
@@ -48,3 +47,20 @@ __all__ = [
 ]
 
 __version__ = "0.1.0"
+
+# `NoiseSeriesDataset`, `SampleSpec`, and `default_specs` live in `.dataset`,
+# which imports torch. Lazy import
+_LAZY = {"NoiseSeriesDataset", "SampleSpec", "default_specs"}
+
+
+def __getattr__(name):
+    if name in _LAZY:
+        from . import dataset as _ds
+        val = getattr(_ds, name)
+        globals()[name] = val
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(__all__) | set(globals()))
