@@ -12,10 +12,10 @@ from .noise import colored_noise, el_nino_noise
 
 @dataclass
 class SeriesResult:
-    X: np.ndarray             # (T,) float64 — observed series X_t = L_t + a*N_t
-    y: np.ndarray             # (T,) int8 — direction labels in {-1, 0, +1}
-    L: np.ndarray             # (T,) float64 — level component
-    N: np.ndarray             # (T,) float64 — (standardized) noise component
+    X: np.ndarray             # (T,) float64 - observed series X_t = L_t + a*N_t
+    y: np.ndarray             # (T,) int8 - direction labels in {-1, 0, +1}
+    L: np.ndarray             # (T,) float64 - level component
+    N: np.ndarray             # (T,) float64 - (standardized) noise component
     amplitude: float
     structural_mode: int
     noise: NoiseSpec
