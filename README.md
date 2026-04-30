@@ -75,7 +75,7 @@ which is convenient for paired comparisons.
 
 ## Example
 
-![example1.jpg](examples/example1.jpg)
+![Example](https://raw.githubusercontent.com/Shel2123/Chronoise/main/examples/example1.jpg)
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
