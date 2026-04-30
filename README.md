@@ -16,7 +16,7 @@ dataset is a `6 x 3 x 2 x 10 = 360`-element grid.
 ## Install
 
 ```bash
-pip install .
+pip install chronoise
 ```
 
 Requires Python `>=3.10`, `numpy>=1.23`, `torch>=2.0`.
