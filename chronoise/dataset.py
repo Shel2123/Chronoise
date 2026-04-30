@@ -141,7 +141,7 @@ class NoiseSeriesDataset(Dataset):
         if self.keep_components:
             arrays["L"] = self._L
             arrays["N"] = self._N
-        # Manifest stored as a 0-d unicode array — survives ``allow_pickle=False``.
+        # Manifest stored as a 0-d unicode array - survives ``allow_pickle=False``.
         np.savez_compressed(path, manifest=np.array(json.dumps(manifest)), **arrays)
 
     @classmethod
@@ -178,7 +178,7 @@ class NoiseSeriesDataset(Dataset):
             return obj
 
 
-# ---------- (de)serialization helpers for GeneratorConfig ----------
+# --- (de)serialization helpers for GeneratorConfig ----------
 
 _CFG_KEYS_INT = ("T", "T0", "geom_offset", "K", "T1", "T2", "n_seeds", "seed_base")
 _CFG_KEYS_FLOAT = ("sigma_L", "gamma", "geom_p", "f_high", "phi_ar")
