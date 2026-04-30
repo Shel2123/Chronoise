@@ -74,5 +74,4 @@ Series with the same `seed` share the same level trace across noise types,
 which is convenient for paired comparisons.
 
 ## License
-
-TBD.
+This project is licensed under the [MIT License](LICENSE).
