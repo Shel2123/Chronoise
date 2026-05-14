@@ -25,6 +25,15 @@ Quick usage::
     ds2 = NoiseSeriesDataset.load("dataset.npz")
 """
 from .config import GeneratorConfig, NoiseKind, NoiseSpec, default_noise_specs
+from .langevin import (
+    colored_driver,
+    draw_driver,
+    el_nino_driver,
+    integrate_langevin,
+    labels_from_trajectory,
+    load_langevin_run,
+    save_langevin_run,
+)
 from .level import LevelTrace, generate_level, labels_from_level
 from .noise import colored_noise, el_nino_noise
 from .series import SeriesResult, generate_series
@@ -44,6 +53,13 @@ __all__ = [
     "el_nino_noise",
     "SeriesResult",
     "generate_series",
+    "integrate_langevin",
+    "labels_from_trajectory",
+    "colored_driver",
+    "el_nino_driver",
+    "draw_driver",
+    "save_langevin_run",
+    "load_langevin_run",
 ]
 
 __version__ = "0.1.0"
