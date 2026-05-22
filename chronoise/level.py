@@ -77,9 +77,29 @@ def generate_level(
 
 
 def labels_from_level(L: np.ndarray) -> np.ndarray:
-    """y_t = sign(L_t - L_{t-1}); y_1 = 0."""
+    """Signed three-class direction labels.
+
+    y_t = sign(L_t - L_{t-1}); y_1 = 0. Values are in {-1, 0, +1}.
+    """
     y = np.zeros_like(L, dtype=np.int8)
     diff = np.diff(L)
     y[1:][diff > 0] = 1
     y[1:][diff < 0] = -1
+    return y
+
+
+def labels_binary_from_level(L: np.ndarray) -> np.ndarray:
+    """Binary break/no-break labels.
+
+    y_t = 1 if L_t != L_{t-1} else 0; y_1 = 0. Values are in {0, 1}.
+
+    This is the bifurcation-event encoding used in the
+    "break vs. no-break" detection task. It is equivalent to
+    ``(labels_from_level(L) != 0).astype(np.int8)`` but is exposed as a
+    first-class helper to avoid a redundant conversion and to mirror
+    the signed variant ``labels_from_level``.
+    """
+    y = np.zeros_like(L, dtype=np.int8)
+    diff = np.diff(L)
+    y[1:][diff != 0] = 1
     return y

@@ -6,14 +6,20 @@ from dataclasses import dataclass
 import numpy as np
 
 from .config import GeneratorConfig, NoiseKind, NoiseSpec
-from .level import LevelTrace, generate_level, labels_from_level
+from .level import (
+    LevelTrace,
+    generate_level,
+    labels_from_level,
+    labels_binary_from_level,
+)
 from .noise import colored_noise, el_nino_noise
 
 
 @dataclass
 class SeriesResult:
     X: np.ndarray             # (T,) float64 - observed series X_t = L_t + a*N_t
-    y: np.ndarray             # (T,) int8 - direction labels in {-1, 0, +1}
+    y: np.ndarray             # (T,) int8 - signed direction labels in {-1, 0, +1}
+    y_binary: np.ndarray      # (T,) int8 - binary break labels in {0, 1}
     L: np.ndarray             # (T,) float64 - level component
     N: np.ndarray             # (T,) float64 - (standardized) noise component
     amplitude: float
@@ -51,9 +57,11 @@ def generate_series(
         raise ValueError(f"Unknown noise kind: {noise.kind!r}")
     X = trace.L + amplitude * N
     y = labels_from_level(trace.L)
+    y_binary = labels_binary_from_level(trace.L)
     return SeriesResult(
         X=X,
         y=y,
+        y_binary=y_binary,
         L=trace.L,
         N=N,
         amplitude=float(amplitude),
