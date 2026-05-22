@@ -34,7 +34,12 @@ from .langevin import (
     load_langevin_run,
     save_langevin_run,
 )
-from .level import LevelTrace, generate_level, labels_from_level
+from .level import (
+    LevelTrace,
+    generate_level,
+    labels_from_level,
+    labels_binary_from_level,
+)
 from .noise import colored_noise, el_nino_noise
 from .series import SeriesResult, generate_series
 
@@ -46,8 +51,10 @@ __all__ = [
     "NoiseSeriesDataset",
     "SampleSpec",
     "default_specs",
+    "LabelMode",
     "LevelTrace",
     "generate_level",
+    "labels_binary_from_level",
     "labels_from_level",
     "colored_noise",
     "el_nino_noise",
@@ -64,9 +71,9 @@ __all__ = [
 
 __version__ = "0.1.0"
 
-# `NoiseSeriesDataset`, `SampleSpec`, and `default_specs` live in `.dataset`,
-# which imports torch. Lazy import
-_LAZY = {"NoiseSeriesDataset", "SampleSpec", "default_specs"}
+# `NoiseSeriesDataset`, `SampleSpec`, `default_specs`, and `LabelMode` live
+# in `.dataset`, which imports torch. Lazy import.
+_LAZY = {"NoiseSeriesDataset", "SampleSpec", "default_specs", "LabelMode"}
 
 
 def __getattr__(name):

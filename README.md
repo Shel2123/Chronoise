@@ -39,16 +39,25 @@ r = generate_series(
     structural_mode=1,
     seed=0,
 )
-# r.X: (T,) float64 observed series
-# r.y: (T,) int8 direction labels in {-1, 0, +1}
-# r.L, r.N: level and standardized noise components
+# r.X        : (T,) float64 observed series
+# r.y        : (T,) int8 signed direction labels in {-1, 0, +1}
+# r.y_binary : (T,) int8 binary bifurcation labels in {0, 1}
+# r.L, r.N   : level and standardized noise components
 
 # Full canonical dataset (360 series in memory).
-ds = NoiseSeriesDataset(cfg)
+ds = NoiseSeriesDataset(cfg)                  # default: signed labels {-1, 0, +1}
 ds.save("dataset.npz")
 ds = NoiseSeriesDataset.load("dataset.npz")
 
 x, y = ds[0]  # torch tensors
+
+# Switch to binary bifurcation labels for the break-vs-no-break task:
+ds_bin = NoiseSeriesDataset(cfg, label_mode="binary")
+x, y = ds_bin[0]                              # y in {0, 1}
+
+# Both encodings are always stored — access either without rebuilding:
+y_signed = ds.labels(0, mode="signed")
+y_binary = ds.labels(0, mode="binary")
 ```
 
 For a runnable example see `examples/quickstart.py`.
@@ -60,7 +69,13 @@ chronoise-build dataset.npz --T 8192 --n-seeds 10
 ```
 
 Add `--keep-components` to also store the level (`L`) and noise (`N`)
-components in the archive.
+components in the archive. Add `--label-mode {signed,binary}` to choose the
+default label encoding (both arrays are always persisted; this flag only
+selects what `__getitem__` returns):
+
+```bash
+chronoise-build dataset.npz --label-mode binary
+```
 
 ## Configuration
 

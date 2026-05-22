@@ -4,11 +4,14 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+
+LabelMode = Literal["signed", "binary"]
+_LABEL_MODES: tuple[str, ...] = ("signed", "binary")
 
 from .config import GeneratorConfig, NoiseKind, NoiseSpec, default_noise_specs
 from .series import generate_series
@@ -62,12 +65,23 @@ class NoiseSeriesDataset(Dataset):
     """In-memory PyTorch dataset of generated series.
 
     Each item is ``(X, y)`` where ``X`` has shape ``(T,)`` and ``y`` has shape
-    ``(T,)`` with values in ``{-1, 0, +1}``. Pass ``return_meta=True`` to also
-    receive a per-sample metadata dict (note: this disables default DataLoader
-    collation since the dict carries strings).
+    ``(T,)``. Label encoding is controlled by ``label_mode``:
 
-    Set ``keep_components=True`` to also retain the level component ``L`` and
-    the standardized noise component ``N`` (accessed via ``ds.components(idx)``).
+    - ``"signed"`` (default, backward-compatible): values in ``{-1, 0, +1}``
+      — signed three-class direction labels.
+    - ``"binary"``: values in ``{0, 1}`` — bifurcation/no-bifurcation labels
+      for the break-vs-no-break task.
+
+    Both label arrays are always computed and stored internally (it is cheap)
+    so switching modes after construction does not require regeneration. Use
+    ``ds.labels(idx, mode="...")`` to access either array directly without
+    changing the default mode.
+
+    Pass ``return_meta=True`` to also receive a per-sample metadata dict
+    (note: this disables default DataLoader collation since the dict carries
+    strings). Set ``keep_components=True`` to also retain the level component
+    ``L`` and the standardized noise component ``N`` (accessed via
+    ``ds.components(idx)``).
     """
 
     def __init__(
@@ -77,20 +91,27 @@ class NoiseSeriesDataset(Dataset):
         *,
         keep_components: bool = False,
         return_meta: bool = False,
+        label_mode: LabelMode = "signed",
         x_dtype: torch.dtype = torch.float32,
         y_dtype: torch.dtype = torch.int64,
     ):
+        if label_mode not in _LABEL_MODES:
+            raise ValueError(
+                f"label_mode must be one of {_LABEL_MODES!r}, got {label_mode!r}"
+            )
         self.cfg = cfg if cfg is not None else GeneratorConfig()
         self.specs: list[SampleSpec] = list(specs) if specs is not None else default_specs(self.cfg)
         self.keep_components = bool(keep_components)
         self.return_meta = bool(return_meta)
+        self.label_mode: LabelMode = label_mode
         self.x_dtype = x_dtype
         self.y_dtype = y_dtype
 
         n = len(self.specs)
         T = self.cfg.T
         self._X = np.empty((n, T), dtype=np.float32)
-        self._y = np.empty((n, T), dtype=np.int64)
+        self._y = np.empty((n, T), dtype=np.int64)            # signed labels
+        self._y_binary = np.empty((n, T), dtype=np.int64)     # binary labels
         self._L: np.ndarray | None = np.empty((n, T), dtype=np.float32) if keep_components else None
         self._N: np.ndarray | None = np.empty((n, T), dtype=np.float32) if keep_components else None
 
@@ -104,6 +125,7 @@ class NoiseSeriesDataset(Dataset):
             )
             self._X[i] = r.X.astype(np.float32, copy=False)
             self._y[i] = r.y.astype(np.int64, copy=False)
+            self._y_binary[i] = r.y_binary.astype(np.int64, copy=False)
             if keep_components:
                 self._L[i] = r.L.astype(np.float32, copy=False)
                 self._N[i] = r.N.astype(np.float32, copy=False)
@@ -113,12 +135,29 @@ class NoiseSeriesDataset(Dataset):
     def __len__(self) -> int:
         return len(self.specs)
 
+    def _label_array(self, mode: LabelMode | None = None) -> np.ndarray:
+        m = self.label_mode if mode is None else mode
+        if m not in _LABEL_MODES:
+            raise ValueError(
+                f"label_mode must be one of {_LABEL_MODES!r}, got {m!r}"
+            )
+        return self._y if m == "signed" else self._y_binary
+
     def __getitem__(self, idx: int):
         x = torch.from_numpy(self._X[idx]).to(self.x_dtype)
-        y = torch.from_numpy(self._y[idx]).to(self.y_dtype)
+        y_arr = self._label_array()
+        y = torch.from_numpy(y_arr[idx]).to(self.y_dtype)
         if self.return_meta:
             return x, y, self.specs[idx].to_dict()
         return x, y
+
+    def labels(self, idx: int, *, mode: LabelMode | None = None) -> np.ndarray:
+        """Return the label array for sample ``idx`` in the requested ``mode``.
+
+        Defaults to the dataset's ``label_mode``. Use this to inspect labels
+        in either encoding without changing the default.
+        """
+        return self._label_array(mode)[idx]
 
     def components(self, idx: int) -> tuple[np.ndarray, np.ndarray]:
         """Return (L, N) arrays for sample ``idx`` (requires keep_components=True)."""
@@ -136,8 +175,13 @@ class NoiseSeriesDataset(Dataset):
             "cfg": _cfg_to_dict(self.cfg),
             "specs": [s.to_dict() for s in self.specs],
             "keep_components": self.keep_components,
+            "label_mode": self.label_mode,
         }
-        arrays: dict[str, np.ndarray] = {"X": self._X, "y": self._y}
+        arrays: dict[str, np.ndarray] = {
+            "X": self._X,
+            "y": self._y,
+            "y_binary": self._y_binary,
+        }
         if self.keep_components:
             arrays["L"] = self._L
             arrays["N"] = self._N
@@ -152,6 +196,7 @@ class NoiseSeriesDataset(Dataset):
         x_dtype: torch.dtype = torch.float32,
         y_dtype: torch.dtype = torch.int64,
         return_meta: bool = False,
+        label_mode: LabelMode | None = None,
     ) -> "NoiseSeriesDataset":
         path = Path(path)
         with np.load(path, allow_pickle=False) as data:
@@ -159,16 +204,28 @@ class NoiseSeriesDataset(Dataset):
             cfg = _cfg_from_dict(manifest["cfg"])
             specs = [SampleSpec.from_dict(s) for s in manifest["specs"]]
             keep_components = bool(manifest.get("keep_components", "L" in data.files))
+            stored_mode = manifest.get("label_mode", "signed")
+            mode = label_mode if label_mode is not None else stored_mode
+            if mode not in _LABEL_MODES:
+                raise ValueError(
+                    f"label_mode must be one of {_LABEL_MODES!r}, got {mode!r}"
+                )
 
             obj = cls.__new__(cls)
             obj.cfg = cfg
             obj.specs = specs
             obj.keep_components = keep_components
             obj.return_meta = return_meta
+            obj.label_mode = mode
             obj.x_dtype = x_dtype
             obj.y_dtype = y_dtype
             obj._X = np.asarray(data["X"], dtype=np.float32)
             obj._y = np.asarray(data["y"], dtype=np.int64)
+            # Old archives (pre-binary-labels) don't carry y_binary; derive it.
+            if "y_binary" in data.files:
+                obj._y_binary = np.asarray(data["y_binary"], dtype=np.int64)
+            else:
+                obj._y_binary = (obj._y != 0).astype(np.int64)
             if keep_components:
                 obj._L = np.asarray(data["L"], dtype=np.float32)
                 obj._N = np.asarray(data["N"], dtype=np.float32)
