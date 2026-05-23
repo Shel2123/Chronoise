@@ -69,7 +69,7 @@ __all__ = [
     "load_langevin_run",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 # `NoiseSeriesDataset`, `SampleSpec`, `default_specs`, and `LabelMode` live
 # in `.dataset`, which imports torch. Lazy import.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chronoise"
-version = "0.2.0"
+version = "0.3.0"
 description = "Synthetic noise-driven time series with controllable structure for ML benchmarks."
 readme = "README.md"
 license = {file = "LICENSE"}

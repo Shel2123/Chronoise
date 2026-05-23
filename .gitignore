@@ -35,6 +35,11 @@ htmlcov/
 .vscode/
 *.iml
 
+# Claude Code / agent tooling
+.claude/
+.agents/
+skills-lock.json
+
 # OS
 .DS_Store
 Thumbs.db
